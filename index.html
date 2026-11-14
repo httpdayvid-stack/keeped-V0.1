@@ -220,8 +220,8 @@ if(a==='quick'){e.preventDefault();const v=$('qi').value.trim();if(v){S.tasks.un
 else if(a==='new'){const k=$('nk').value,o={n:$('nn').value.trim(),d:false,e:$('ne').checked,m:$('nm').value.trim()};
 if(k==='meds'){o.time=$('nt').value;o.dose=$('nd').value.trim()||'—'}if(k==='habits')o.s=0;
 S[k].push(o);S.view='rotina';S.tab=k;render();toast('Criado.')}});
-(function(){const C=window.Capacitor;if(!C||!C.isNativePlatform||!C.isNativePlatform())return;
-const B=C.registerPlugin('Blocker'),LN=C.registerPlugin('LocalNotifications');
+(function(){try{const C=window.Capacitor;if(!C||!C.isNativePlatform||!C.isNativePlatform())return;
+const reg=n=>C.registerPlugin?C.registerPlugin(n):((C.Plugins&&C.Plugins[n])||{});const B=reg('Blocker'),LN=reg('LocalNotifications');
 const PK={Instagram:'com.instagram.android',TikTok:'com.zhiliaoapp.musically',YouTube:'com.google.android.youtube',X:'com.twitter.android'};
 const PM={usage:'openUsageSettings',overlay:'openOverlaySettings',battery:'openBatterySettings'};
 window.__perm=n=>{try{B[PM[n]]()}catch(e){}};
@@ -238,7 +238,7 @@ async function pull(){try{const d=await B.getDone();const a=d.done||[];a.forEach
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 try{LN.requestPermissions()}catch(e){}
 pull();window.__sync();
-})();
+}catch(e){}})();
 render();
 </script>
 </body>
