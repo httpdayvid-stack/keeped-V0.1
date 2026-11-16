@@ -2,6 +2,16 @@ package com.keeped.app;
 
 import android.app.AppOpsManager;
 import android.content.*;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.util.Base64;
+import java.io.ByteArrayOutputStream;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Process;
@@ -66,5 +76,46 @@ public class BlockerPlugin extends Plugin {
         JSObject o = new JSObject();
         try { o.put("done", new JSArray(d)); } catch (Exception e) { o.put("done", new JSArray()); }
         c.resolve(o);
+    }
+
+    private String icon(Drawable d) {
+        Bitmap b = Bitmap.createBitmap(48, 48, Bitmap.Config.ARGB_8888);
+        Canvas cv = new Canvas(b);
+        d.setBounds(0, 0, 48, 48);
+        d.draw(cv);
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        b.compress(Bitmap.CompressFormat.PNG, 90, bo);
+        return Base64.encodeToString(bo.toByteArray(), Base64.NO_WRAP);
+    }
+
+    @PluginMethod
+    public void listApps(final PluginCall c) {
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Context ctx = getContext();
+                    PackageManager pm = ctx.getPackageManager();
+                    Intent i = new Intent(Intent.ACTION_MAIN, null);
+                    i.addCategory(Intent.CATEGORY_LAUNCHER);
+                    List<ResolveInfo> l = pm.queryIntentActivities(i, 0);
+                    Set<String> seen = new HashSet<String>();
+                    JSArray arr = new JSArray();
+                    for (ResolveInfo r : l) {
+                        String pkg = r.activityInfo.packageName;
+                        if (pkg.equals(ctx.getPackageName()) || !seen.add(pkg)) continue;
+                        JSObject o = new JSObject();
+                        o.put("p", pkg);
+                        o.put("n", r.loadLabel(pm).toString());
+                        try { o.put("ic", icon(r.loadIcon(pm))); } catch (Throwable e) { }
+                        arr.put(o);
+                    }
+                    JSObject res = new JSObject();
+                    res.put("apps", arr);
+                    c.resolve(res);
+                } catch (Throwable e) {
+                    c.reject("Falha ao listar apps");
+                }
+            }
+        }).start();
     }
 }
